@@ -51,13 +51,14 @@ def get_set_nums(server_credentials, server_dir):
     set_num = []
     gain = ''
     defect = ''
+    gain_defect_names = ['gain','CountRef','defect','defects']
     for file in files:
         if file.endswith('.tif'):
             file_info = re.search(r"_[0-9]+_[0-9]{5}_-*[0-9]{1,2}", file)
             file_num = file_info.group().split('_')[1]
             if not file_num in set_num:
                 set_num.append(file_num)
-        elif file.endswith('.mrc')  and file.startswith('CountRef'):
+        elif file.endswith('.mrc')  and (file.startswith('CountRef') or file.startswith('gain')):
             if gain == '':
                 gain = file
             else:
@@ -105,6 +106,7 @@ def transfer_tifs(server_credentials, server_dir, set_nums, prefix, gain, defect
 def prepare_files(parent_directory, prefix, set_nums):
     for num in set_nums:
         raw_tif_path = os.path.join(parent_directory,prefix+'_'+num,'raw_tif')
+        run(['tomo_prepare_files.py', '-r', parent_directory])
         run(['tomo_prepare_files.py', '-r', raw_tif_path])
         run(['tomo_combine_mdoc.py', raw_tif_path, '-o',os.path.join(str(raw_tif_path),prefix+'_'+num+'.mdoc'),'--fix-paths'])
 
@@ -123,10 +125,23 @@ def main():
 
     info = {}
 
+    if args.parent_directory == './':
+        args.parent_directory = os.getcwd()
+
     set_nums, gain, defect = get_set_nums(args.server_credentials, args.server_dir)
+    #fix gain so that there are underscores instead of decimals
+    info['original_gain'] = os.path.join(args.parent_directory, gain)
+    info['original_defect'] = os.path.join(args.parent_directory, defect)
+
     directory_paths = build_tree(args.parent_directory, set_nums, args.prefix)
+
     info['directory_paths'] = directory_paths
+
     transfer_tifs(args.server_credentials, args.server_dir, set_nums, args.prefix, gain, defect, args.parent_directory)
+
+    os.rename(info['original_gain'],os.path.join(args.parent_directory,'gain.mrc'))
+    os.rename(info['original_defect'], os.path.join(args.parent_directory,'defects.txt'))
+
     prepare_files(args.parent_directory, args.prefix, set_nums)
 
     j_file = json.dumps(info, indent=4)
