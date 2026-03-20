@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+import json
 from argparse import ArgumentParser
 from subprocess import check_output, run, CalledProcessError
 import os
@@ -44,7 +44,7 @@ def get_set_nums(server_credentials, server_dir):
     :return: a list of numbers corresponding to groups of raw tilts
     """
     try:
-        files = str(check_output(['ssh', server_credentials, 'ls', '-lah',
+        files = str(check_output(['ssh', server_credentials, 'ls',
                                   '--sort=time', server_dir]))[2:-1].split('\\n')[:-1]
     except CalledProcessError:
         exit()
@@ -68,10 +68,11 @@ def get_set_nums(server_credentials, server_dir):
             else:
                 continue
     if not len(set_num)==0:
-        print('found ' + str(len(set_num)) + ' groups of tilt files\n')
+        print('finished initial query\nfound: ' + str(len(set_num)) + ' groups of tilt files')
     else:
         print('not tif files found')
         exit()
+    print('found gain: ' + gain +'\nfound defect: ' + defect + '\n')
     return set_num, gain, defect
 
 def transfer_tifs(server_credentials, server_dir, set_nums, prefix, gain, defect, parent_directory):
@@ -88,12 +89,13 @@ def transfer_tifs(server_credentials, server_dir, set_nums, prefix, gain, defect
     """
     print('\ninitiating file transfer...')
     print('\ntransferring gain and defect files')
-    run(['rsync', '-au', '--info=progress2', server_credentials + ':' +
-        os.path.join(server_dir, gain),
-        os.path.join(parent_directory)])
-    run(['rsync', '-au', '--info=progress2', server_credentials + ':' +
-         os.path.join(server_dir, defect),
-         os.path.join(parent_directory)])
+    if not gain == '' and not defect == '':
+        run(['rsync', '-au', '--info=progress2', server_credentials + ':' +
+            os.path.join(server_dir, gain),
+            os.path.join(parent_directory)])
+        run(['rsync', '-au', '--info=progress2', server_credentials + ':' +
+             os.path.join(server_dir, defect),
+             os.path.join(parent_directory)])
     for set_num in set_nums:
         print('\n' + '#'*10 + '[transferring group ' + set_num + ']' + '#'*10)
         run(['rsync', '-au', '--info=progress2', server_credentials + ':' +
@@ -126,5 +128,10 @@ def main():
     info['directory_paths'] = directory_paths
     transfer_tifs(args.server_credentials, args.server_dir, set_nums, args.prefix, gain, defect, args.parent_directory)
     prepare_files(args.parent_directory, args.prefix, set_nums)
+
+    j_file = json.dumps(info, indent=4)
+    with open(os.path.join(args.parent_directory,'tomo_info','info.json'), 'w') as fp:
+        fp.write(j_file)
+
 if __name__=='__main__':
     main()
