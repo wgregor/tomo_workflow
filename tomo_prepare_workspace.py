@@ -128,8 +128,9 @@ def main():
     if args.parent_directory == './':
         args.parent_directory = os.getcwd()
 
+    info['parent_directory'] = args.parent_directory
+
     set_nums, gain, defect = get_set_nums(args.server_credentials, args.server_dir)
-    #fix gain so that there are underscores instead of decimals
     info['original_gain'] = os.path.join(args.parent_directory, gain)
     info['original_defect'] = os.path.join(args.parent_directory, defect)
 
