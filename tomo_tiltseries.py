@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from argparse import ArgumentParser
-from subprocess import check_output, run
+from subprocess import run
 import os
 import json
 
