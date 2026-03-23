@@ -26,14 +26,15 @@ def build_tree(parent_directory, set_nums, prefix):
     # loops through the tilt set numbers and creates directory trees for each set of raw data to process
     for set_num in set_nums:
         sub_dir = prefix + '_' + set_num
+        directory_path = os.path.join(parent_directory, sub_dir)
         try:
-            directory_path = os.path.join(parent_directory, sub_dir)
             os.mkdir(directory_path)
             os.mkdir(os.path.join(str(directory_path), 'raw_tif'))
             directory_paths.append(directory_path)
             print('created directory ' + str(directory_path))
         except FileExistsError:
             print('the directory ' + str(os.path.join(parent_directory, sub_dir)) + ' already exists.')
+            directory_paths.append(directory_path)
     return directory_paths
 
 def get_set_nums(server_credentials, server_dir):
@@ -49,13 +50,14 @@ def get_set_nums(server_credentials, server_dir):
     except CalledProcessError:
         exit()
     set_num = []
+    original_files = []
     gain = ''
     defect = ''
-    gain_defect_names = ['gain','CountRef','defect','defects']
     for file in files:
         if file.endswith('.tif'):
             file_info = re.search(r"_[0-9]+_[0-9]{5}_-*[0-9]{1,2}", file)
             file_num = file_info.group().split('_')[1]
+            original_files.append(file_info.string)
             if not file_num in set_num:
                 set_num.append(file_num)
         elif file.endswith('.mrc')  and (file.startswith('CountRef') or file.startswith('gain')):

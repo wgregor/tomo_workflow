@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--flip_gain', default=2, type=int,
                         help='how to flip the gain file. 0=none 1=flip-x 2=flip-y')
     parser.add_argument('--gain', default='gain.mrc', help='path to the gain file')
-    parser.add_argument('--defects', defaults='defects.txt', help='path to the defect file')
+    parser.add_argument('--defects', default='defects.txt', help='path to the defect file')
 
     args=parser.parse_args()
 
@@ -33,8 +33,8 @@ def main():
         raw_tif_path = os.path.join(directory, 'raw_tif')
         mdoc_path = os.path.join(raw_tif_path, base_name + '.mdoc')
         run(['e2ddd_external.py', raw_tif_path, '--program=ucsf_motioncor2', '--device=gpu', '--mdoc=' + mdoc_path,
-             '--apix=' + str(args.apix), '--gain=' + args.gain, '--defect_file=' + args.defect, '--mc2_rotgain=0',
+             '--apix=' + str(args.apix), '--gain=' + args.gain, '--defect_file=' + args.defects, '--mc2_rotgain=0',
              '--mc2_flipgain='+str(args.flip_gain), '--imod_rotflipgain=0', '--device_num=0', '--tomo'])
-
+    print('process complete')
 if __name__=='__main__':
     main()
